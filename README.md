@@ -1,4 +1,8 @@
 # C90 TODO List
+
+![Screenshot](https://raw.github.com/danielesteban/TODO/master/screenshot.png)
+
+## License
  
 Copyright (C) 2015 Daniel Esteban Nombela <dani@dabuten.co>
  

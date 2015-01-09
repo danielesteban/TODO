@@ -38,7 +38,7 @@
 /**
 *   \brief  Clears the screen
 */
-#define CLEAR_SCREEN() printf("\033[2J\033[3J\033[0f")
+#define CLEAR_SCREEN() printf("\033]50;ClearScrollback\a\033[2J\033[3J\033[0f")
 
 /**
 *   \brief  Sets the screen background color
@@ -396,7 +396,7 @@ void render() {
 	/* Print the title */
 	FGCOLOR(CYAN);
 	for(i=0; i<windowSize.ws_col; i++) printf("=");
-	printf("\n%*s\n", (windowSize.ws_col / 2) + titleLength / 2, TODOListTitle);
+	printf("\n%*s\n", (windowSize.ws_col / 2) + (titleLength / 2), TODOListTitle);
 	for(i=0; i<windowSize.ws_col; i++) printf("=");
 	printf("\n\n");
 	
@@ -404,7 +404,7 @@ void render() {
 	while(entry != NULL) {
 		if(entry->done) FGCOLOR(GREEN);
 		else FGCOLOR(RED);
-		printf("%2d: %s %s\n", index++, entry->done ? "✔" : "✘", entry->title);
+		printf("%3d: %s %s\n", index++, entry->done ? "✔" : "✘", entry->title);
 		entry = entry->next;
 	}
 
@@ -423,7 +423,7 @@ void render() {
 
 		for(i=0; i<5; i++) {
 			FGCOLOR(YELLOW);
-			printf("%-13s", commands[i][0]);
+			printf("%*s%-13s", (windowSize.ws_col / 2) - 15, "", commands[i][0]);
 			FGCOLOR(CYAN);
 			printf("%s\n", commands[i][1]);
 		}
