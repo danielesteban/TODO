@@ -27,12 +27,28 @@
  *  Main file for the C90 TODO List
  */
 
-/* Using CType, Standard I/O, Standard lib, Strings & IOCTL */
+/* Using CType, Signals, Standard I/O, Standard lib, Strings & IOCTL */
 #include <ctype.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+
+/**
+*   \brief  Clears the screen
+*/
+#define CLEAR_SCREEN() printf("\033[2J\033[3J\033[0f")
+
+/**
+*   \brief  Sets the screen background color
+*/
+#define BGCOLOR(color) printf("\033[%d;1m", 40 + color)
+
+/**
+*   \brief  Sets the screen foreground color
+*/
+#define FGCOLOR(color) printf("\033[%d;1m", 30 + color)
 
 /**
  *  \brief  The maximum buffer size
@@ -41,9 +57,18 @@
 #define MAX_BUFFER_SIZE 511
 
 /**
-*   \brief  Clears the screen
+*   \brief  ANSI Color constants
 */
-#define clearScreen() printf("\033[2J\033[3J\033[0f")
+enum ANSI_COLORS {
+	BLACK,
+	RED,
+	GREEN,
+	YELLOW,
+	BLUE,
+	MAGENTA,
+	CYAN,
+	WHITE
+};
 
 /**
  *  \brief The TODO entry struct
@@ -66,6 +91,9 @@ static struct TODOEntry *TODOListLast = NULL;
 
 /* The current window size */
 static struct winsize windowSize;
+
+/* The help rendering flag */
+static char renderHelp = 1;
 
 /**
  *  \brief A really simple trimming function
@@ -363,25 +391,46 @@ void render() {
 	unsigned short int i;
 
 	/* Clear the screen */
-	clearScreen();
+	CLEAR_SCREEN();
 
 	/* Print the title */
-	for(i = 0; i<windowSize.ws_col; i++) printf("=");
+	FGCOLOR(CYAN);
+	for(i=0; i<windowSize.ws_col; i++) printf("=");
 	printf("\n%*s\n", (windowSize.ws_col / 2) + titleLength / 2, TODOListTitle);
-	for(i = 0; i<windowSize.ws_col; i++) printf("=");
-	printf("\n");
+	for(i=0; i<windowSize.ws_col; i++) printf("=");
+	printf("\n\n");
 	
 	/* Iterate through the TODO list */
 	while(entry != NULL) {
+		if(entry->done) FGCOLOR(GREEN);
+		else FGCOLOR(RED);
 		printf("%2d: %s %s\n", index++, entry->done ? "✔" : "✘", entry->title);
 		entry = entry->next;
 	}
 
 	/* Move the cursor to the bottom of the screen */
-	printf("\033[%df", windowSize.ws_row - 4);
+	printf("\033[%df\n", windowSize.ws_row - (renderHelp ? 7 : 2));
 	
-	/* Print the menu */
-	printf("[n] => Toggle entry [n]\nA[title] => Add new entry\nD[n] => Delete entry [n]\nQ => Quit\n");
+	if(renderHelp) {
+		/* Print help */
+		const char *commands[5][2] = {
+			{"[n]", "Toggle entry [n]"},
+			{"A [title]", "Add new entry"},
+			{"D [n]", "Delete entry [n]"},
+			{"H", "Toggle help"},
+			{"Q", "Quit"}
+		};
+
+		for(i=0; i<5; i++) {
+			FGCOLOR(YELLOW);
+			printf("%-13s", commands[i][0]);
+			FGCOLOR(CYAN);
+			printf("%s\n", commands[i][1]);
+		}
+	}
+
+	FGCOLOR(WHITE);
+	printf("\n> ");
 }
 
 /**
@@ -404,8 +453,14 @@ void sigintHandler(int sig) {
 	/* Free the memory */
 	freeTodoList();
 
+	/* Reset the colors */
+	printf("\033[0m");
+
+	/* Reset the window title */
+	printf("\033]0;\007");
+
 	/* Clear the screen */
-	clearScreen();
+	CLEAR_SCREEN();
 
 	if(sig) exit(0);
 }
@@ -431,6 +486,12 @@ int main(int argc, char **argv) {
 
 	/* Load the TODO list */
 	loadTODOList(argv[1], argc > 2 ? argv[2] : NULL);
+
+	/* Set the window title */
+	printf("\033]0;%s\007", TODOListTitle);
+
+	/* Set the default background color */
+	BGCOLOR(BLACK);
 
 	/* Get the initial window size */
 	sigwinchHandler(0);
@@ -470,13 +531,18 @@ int main(int argc, char **argv) {
 				userInput[0] = '0';
 				deleteEntry(atoi(userInput));
 			break;
+			case 'H':
+			case 'h':
+			case '?':
+				renderHelp = !renderHelp;
+			break;
 			default:
 				toggleEntry(atoi(userInput));
 			break;
 		}
 	}
 
-	/* Free the memory */
+	/* Reset the screen & Free the memory */
 	sigintHandler(0);
 
 	return 0;
