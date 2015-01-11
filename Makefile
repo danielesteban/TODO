@@ -1,12 +1,13 @@
 SHELL = /bin/sh
 CC = cc
 
-CFLAGS = -std=c90 -pedantic -Wall -Wextra -march=native -ggdb3
+CFLAGS = -std=c90 -Iinclude -pedantic -Wall -Wextra -march=native -ggdb3
 DEBUGFLAGS = -O0 -D _DEBUG
 RELEASEFLAGS = -O3 -D NDEBUG
 
 TARGET = TODO
 SOURCES = $(shell echo src/*.c)
+HEADERS = $(shell echo include/*.h)
 OBJECTS = $(SOURCES:.c=.o)
 
 PREFIX = $(DESTDIR)/usr/local
@@ -17,7 +18,7 @@ all: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) $(OBJECTS)
 
-release: $(SOURCES)
+release: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(RELEASEFLAGS) -o $(TARGET) $(SOURCES)
 
 profile: CFLAGS += -pg
