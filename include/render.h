@@ -38,22 +38,22 @@
 #include "data.h"
 
 /**
-*   \brief  Clears the screen
+*   \brief Clears the screen
 */
 #define CLEAR_SCREEN() printf("\033]50;ClearScrollback\a\033[2J\033[3J\033[0f")
 
 /**
-*   \brief  Sets the screen background color
+*   \brief Sets the screen background color
 */
 #define BGCOLOR(color) printf("\033[%d;1m", 40 + color)
 
 /**
-*   \brief  Sets the screen foreground color
+*   \brief Sets the screen foreground color
 */
 #define FGCOLOR(color) printf("\033[%d;1m", 30 + color)
 
 /**
-*   \brief  ANSI Color constants
+*   \brief ANSI Color constants
 */
 enum ANSI_COLORS {
 	BLACK,

@@ -35,8 +35,8 @@
 #include <string.h>
 
 /**
- *  \brief  The maximum buffer size
- *          (For file reading and user input)
+ *  \brief The maximum buffer size
+ *         (For file reading and user input)
  */
 #define MAX_BUFFER_SIZE 511
 

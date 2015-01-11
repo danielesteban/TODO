@@ -47,6 +47,10 @@ void loadTODOList(const char *filename, const char *title) {
 	/* Add extension to file name (if missing) */
 	char *extension = strchr(filename, '.');
 	TODOListFilename = (char *) malloc((sizeof(char) * strlen(filename)) + (extension == NULL ? 4 : 0) + 1);
+	if(TODOListFilename == NULL) {
+		printf("ERROR allocating TODOListFilename");
+		exit(1);
+	}
 	strcpy(TODOListFilename, filename);
 	if(extension == NULL) strcpy(TODOListFilename + strlen(TODOListFilename), ".txt\0");
 
@@ -56,11 +60,19 @@ void loadTODOList(const char *filename, const char *title) {
 		if(title == NULL) {
 			extension = strchr(TODOListFilename, '.');
 			TODOListTitle = (char *) malloc((sizeof(char) * (extension - TODOListFilename)) + 1);
+			if(TODOListTitle == NULL) {
+				printf("ERROR allocating TODOListTitle");
+				exit(1);
+			}
 			strncpy(TODOListTitle, TODOListFilename, extension - TODOListFilename);
 			TODOListTitle[0] = toupper(TODOListTitle[0]);
 			TODOListTitle[extension - TODOListFilename] = '\0';
 		} else {
 			TODOListTitle = (char *) malloc((sizeof(char) * strlen(title)) + 1);
+			if(TODOListTitle == NULL) {
+				printf("ERROR allocating TODOListTitle");
+				exit(1);
+			}
 			strcpy(TODOListTitle, title);
 		}
 	} else {
@@ -73,7 +85,12 @@ void loadTODOList(const char *filename, const char *title) {
 				else {
 					readBuf[readIndex] = '\0';
 					trimmedBuf = trim(readBuf);
-					strcpy(TODOListTitle = (char *) malloc(sizeof(char) * (strlen(trimmedBuf) + 1)), trimmedBuf);
+					TODOListTitle = (char *) malloc(sizeof(char) * (strlen(trimmedBuf) + 1));
+					if(TODOListTitle == NULL) {
+						printf("ERROR allocating TODOListTitle");
+						exit(1);
+					}
+					strcpy(TODOListTitle, trimmedBuf);
 					readIndex = 0;
 					line++;
 				}
@@ -94,7 +111,12 @@ void loadTODOList(const char *filename, const char *title) {
 				else {
 					readBuf[readIndex] = '\0';
 					trimmedBuf = trim(readBuf);
-					strcpy(entryTitle = (char *) malloc(sizeof(char) * (strlen(trimmedBuf) + 1)), trimmedBuf);
+					entryTitle = (char *) malloc(sizeof(char) * (strlen(trimmedBuf) + 1));
+					if(TODOListTitle == NULL) {
+						printf("ERROR allocating entry title");
+						exit(1);
+					}
+					strcpy(entryTitle, trimmedBuf);
 					addEntry(entryTitle, entryDone);
 					readIndex = 0;
 					entryDone = -1;
@@ -118,11 +140,11 @@ void saveTodoList() {
 	/* Title decorations length */
 	const unsigned short int decorationsLength = 40;
 
+	/* The title length */
+	const unsigned short int titleLength = strlen(TODOListTitle);
+
 	/* Iteration counter for the list title decorations */
 	unsigned short int i;
-
-	/* The title length */
-	char titleLength = strlen(TODOListTitle);
 
 	if(entry == NULL) return;
 
@@ -162,17 +184,30 @@ void freeTodoList() {
 
 	TODOListFirst = TODOListLast = NULL;
 	
-	/* Free the filename & title */
-	free(TODOListFilename);
-	TODOListFilename = NULL;
-	free(TODOListTitle);
-	TODOListTitle = NULL;
+	/* Free the filename */
+	if(TODOListFilename != NULL) {
+		free(TODOListFilename);
+		TODOListFilename = NULL;
+	}
+
+	/* Free the title */
+	if(TODOListTitle != NULL) {
+		free(TODOListTitle);
+		TODOListTitle = NULL;
+	}
 }
 
 void addNewEntry(char *userInput) {
 	/* Parse & trim entry title */
 	char *trimmedInput = trim(userInput + 1);
-	char *title = (char *) malloc((sizeof(char) * strlen(trimmedInput)) + 1);
+	char *title;
+	const unsigned short int titleLength = strlen(trimmedInput);
+	if(titleLength == 0) return;
+	title = (char *) malloc((sizeof(char) * titleLength) + 1);
+	if(title == NULL) {
+		printf("ERROR allocating entry title");
+		exit(1);
+	}
 	strcpy(title, trimmedInput);
 
 	/* Add the entry */
@@ -185,7 +220,11 @@ void addNewEntry(char *userInput) {
 void addEntry(char *title, char done) {
 	/* Allocate the memory */
 	struct TODOEntry *entry = (struct TODOEntry*) malloc(sizeof(struct TODOEntry));
-	
+	if(entry == NULL) {
+		printf("ERROR allocating entry");
+		exit(1);
+	}
+
 	/* Assign the entry data */
 	entry->title = title;
 	entry->done = done;

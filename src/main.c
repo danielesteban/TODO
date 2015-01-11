@@ -27,7 +27,8 @@
  *  Main file for the C90 TODO List
  */
 
-/* Using Signals, Standard I/O & Strings */
+/* Using CType, Signals, Standard I/O & Strings */
+#include <ctype.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,35 +38,40 @@
 #include "render.h"
 
 /**
- *  \brief Signal handler for SIGWINCH
- *  \param sig The signal ID
+ *  \brief At exit handler
  */
-void sigwinchHandler(int sig) {
-	/* Update the window size */
-	updateWindowSize();
-
-	/* Re-Render the GUI */
-	if(sig) render();
-}
-
-/**
- *  \brief Signal handler for SIGINT
- *  \param sig The signal ID
- */
-void sigintHandler(int sig) {
+void atExit() {
 	/* Free the memory */
 	freeTodoList();
-
-	/* Reset the colors */
-	printf("\033[0m");
 
 	/* Reset the window title */
 	printf("\033]0;\007");
 
+	/* Reset the colors */
+	printf("\033[0m");
+
 	/* Clear the screen */
 	CLEAR_SCREEN();
+}
 
-	if(sig) exit(0);
+/**
+ *  \brief Signals handler
+ *  \param sig The signal ID
+ */
+void signalsHandler(int sig) {
+	switch(sig) {
+		case SIGWINCH:
+			/* Update the window size */
+			updateWindowSize();
+
+			/* Re-Render the GUI */
+			render();
+		break;
+		case SIGINT:
+			/* Gracefully exit the program */
+			exit(0);
+		break;
+	}
 }
 
 /**
@@ -77,6 +83,9 @@ void sigintHandler(int sig) {
  *  \return The application exit status code
  */
 int main(int argc, char **argv) {
+	/* The sigaction for signal handling */
+	struct sigaction sa;
+
 	/* The quit flag */
 	char quit = 0;
 
@@ -90,20 +99,34 @@ int main(int argc, char **argv) {
 	/* Load the TODO list */
 	loadTODOList(argv[1], argc > 2 ? argv[2] : NULL);
 
+	/* Set the initial window size */
+	updateWindowSize();
+
 	/* Set the window title */
 	printf("\033]0;%s\007", getTODOListTitle());
 
 	/* Set the default background color */
 	BGCOLOR(BLACK);
 
-	/* Get the initial window size */
-	sigwinchHandler(0);
+	/* Set the signals handler */
+	sa.sa_handler = signalsHandler;
+	sa.sa_flags = SA_RESTART;
+	sigemptyset(&sa.sa_mask);
 
 	/* Set the SIGWINCH handler */
-	signal(SIGWINCH, sigwinchHandler);
+	if(sigaction(SIGWINCH, &sa, NULL) == -1) {
+		printf("ERROR setting the SIGWINCH handler\n");
+		exit(1);
+	}
 
 	/* Set the SIGINT handler */
-	signal(SIGINT, sigintHandler);
+	if(sigaction(SIGINT, &sa, NULL) == -1) {
+		printf("ERROR setting the SIGINT handler\n");
+		exit(1);
+	}
+
+	/* Set the atExit handler */
+	atexit(atExit);
 
 	/* Main loop */
 	while(!quit) {
@@ -120,23 +143,18 @@ int main(int argc, char **argv) {
 		userInput[strlen(userInput) - 1] = '\0';
 
 		/* Process the user input */
-		switch(userInput[0]) {
+		switch(toupper(userInput[0])) {
 			case 'Q':
-			case 'q':
 				quit = 1;
 			break;
 			case 'A':
-			case 'a':
 				addNewEntry(userInput);
 			break;
 			case 'D':
-			case 'd':
 				userInput[0] = '0';
 				deleteEntry(atoi(userInput));
 			break;
 			case 'H':
-			case 'h':
-			case '?':
 				toggleHelp();
 			break;
 			default:
@@ -144,9 +162,6 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
-
-	/* Reset the screen & Free the memory */
-	sigintHandler(0);
 
 	return 0;
 }
