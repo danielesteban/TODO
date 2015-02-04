@@ -1,7 +1,7 @@
 SHELL = /bin/sh
 CC = cc
 
-CFLAGS = -std=c90 -Iinclude -pedantic -Wall -Wextra -march=native -ggdb3
+CFLAGS = -std=gnu90 -Iinclude -pedantic -Wall -Wextra -march=native -ggdb3
 DEBUGFLAGS = -O0 -D _DEBUG
 RELEASEFLAGS = -O3 -D NDEBUG
 
